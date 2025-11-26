@@ -31,7 +31,7 @@ fn main() {
                 ..default()
             }),
         )
-        .add_systems(Startup, (setup_camera, spawn_map, setup_ui))
+        .add_systems(Startup, (load_sprites, setup_camera, spawn_map, setup_ui).chain())
         .add_systems(
             Update,
             (
@@ -95,7 +95,51 @@ fn ensure_sprites_downloaded() {
     }
 
     println!("✓ Sprites downloaded successfully to {}", SPRITE_PATH);
-    println!("  Note: Currently using colored rectangles. Integrate TextureAtlas to use sprites.");
+}
+
+/// Resource holding sprite atlas info
+#[derive(Resource)]
+struct CitySprites {
+    texture: Handle<Image>,
+    layout: Handle<TextureAtlasLayout>,
+}
+
+impl Zone {
+    /// Get the sprite index for this zone type from the Kenney tileset
+    fn sprite_index(self) -> usize {
+        use Zone::*;
+        match self {
+            Empty => 214,      // grass tile
+            Road => 235,       // road tile
+            Residential => 8,  // small house
+            Commercial => 19,  // shop/store
+            Industrial => 53,  // factory/warehouse
+        }
+    }
+}
+
+fn load_sprites(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+) {
+    let texture = asset_server.load(SPRITE_PATH);
+    
+    // Kenney's roguelike city sheet is 17x17 tiles at 16x16 pixels each
+    let layout = TextureAtlasLayout::from_grid(
+        UVec2::splat(16),  // tile size in pixels
+        17,                // columns
+        17,                // rows
+        None,              // padding
+        None,              // offset
+    );
+    
+    let layout_handle = texture_atlases.add(layout);
+    
+    commands.insert_resource(CitySprites {
+        texture,
+        layout: layout_handle,
+    });
 }
 
 /// Grid coordinate for each tile.
@@ -134,14 +178,8 @@ impl Zone {
     }
 
     fn color(self) -> Color {
-        use Zone::*;
-        match self {
-            Empty => Color::srgb(0.1, 0.4, 0.1),       // grass
-            Road => Color::srgb(0.2, 0.2, 0.2),        // dark gray
-            Residential => Color::srgb(0.1, 0.5, 0.9), // blue
-            Commercial => Color::srgb(0.1, 0.8, 0.8),  // teal
-            Industrial => Color::srgb(0.8, 0.7, 0.1),  // yellow
-        }
+        // Return white so sprites show their natural colors
+        Color::WHITE
     }
 }
 
@@ -165,7 +203,7 @@ fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2d);
 }
 
-fn spawn_map(mut commands: Commands) {
+fn spawn_map(mut commands: Commands, sprites: Res<CitySprites>) {
     // Center map around (0, 0)
     let origin_x =
         -(MAP_WIDTH as f32 * TILE_SIZE) / 2.0 + TILE_SIZE / 2.0;
@@ -181,8 +219,12 @@ fn spawn_map(mut commands: Commands) {
 
             commands.spawn((
                 Sprite {
-                    color: zone.color(),
-                    custom_size: Some(Vec2::splat(TILE_SIZE - 1.0)),
+                    image: sprites.texture.clone(),
+                    custom_size: Some(Vec2::splat(TILE_SIZE)),
+                    texture_atlas: Some(TextureAtlas {
+                        layout: sprites.layout.clone(),
+                        index: zone.sprite_index(),
+                    }),
                     ..default()
                 },
                 Transform::from_xyz(
@@ -275,7 +317,10 @@ fn handle_mouse_input(
     for (coord, mut zone, mut sprite) in tiles.iter_mut() {
         if coord.coord.x == tx && coord.coord.y == ty {
             *zone = zone.next();
-            sprite.color = zone.color();
+            // Update the sprite texture atlas index
+            if let Some(ref mut atlas) = sprite.texture_atlas {
+                atlas.index = zone.sprite_index();
+            }
             break;
         }
     }
