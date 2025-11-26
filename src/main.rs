@@ -46,15 +46,15 @@ struct CitySprites {
 }
 
 impl Zone {
-    /// Get the sprite index for this zone type from the Kenney tileset
+    /// Get the sprite index for this zone type from the Kenney tileset (37 columns)
     fn sprite_index(self) -> usize {
         use Zone::*;
         match self {
-            Empty => 214,      // grass tile
-            Road => 235,       // road tile
-            Residential => 8,  // small house
-            Commercial => 19,  // shop/store
-            Industrial => 53,  // factory/warehouse
+            Empty => 23,       // grass tile
+            Road => 0,         // road tile
+            Residential => 65, // small house
+            Commercial => 143, // shop/store
+            Industrial => 220, // factory/warehouse
         }
     }
 }
@@ -66,13 +66,13 @@ fn load_sprites(
 ) {
     let texture = asset_server.load(SPRITE_ASSET_PATH);
     
-    // Kenney's roguelike city sheet is 17x17 tiles at 16x16 pixels each
+    // Kenney's tilemap has 1px spacing between tiles
     let layout = TextureAtlasLayout::from_grid(
-        UVec2::splat(16),  // tile size in pixels
-        17,                // columns
-        17,                // rows
-        None,              // padding
-        None,              // offset
+        UVec2::new(16, 16),      // tile size in pixels
+        37,                      // columns
+        28,                      // rows
+        Some(UVec2::new(1, 1)),  // 1px padding between tiles (CRITICAL FIX)
+        None,                    // no offset
     );
     
     let layout_handle = texture_atlases.add(layout);
