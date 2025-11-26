@@ -1,20 +1,14 @@
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use std::{fs, io::Write, path::Path};
 
 const MAP_WIDTH: i32 = 32;
 const MAP_HEIGHT: i32 = 32;
 const TILE_SIZE: f32 = 32.0;
 
-// Kenney Roguelike Modern City pack (CC0)
-const SPRITE_ZIP_URL: &str = "https://kenney.nl/content/3-assets/11-roguelike-modern-city/roguelikeCity_magenta.png";
-const SPRITE_PATH: &str = "assets/roguelike_city.png";
-const SPRITE_ASSET_PATH: &str = "roguelike_city.png"; // Path for Bevy AssetServer (no 'assets/' prefix)
+// Use the tilemap.png that's already in the repo
+const SPRITE_ASSET_PATH: &str = "kenney_roguelike-modern-city/Tilemap/tilemap.png";
 
 fn main() {
-    // Download sprites before starting Bevy
-    ensure_sprites_downloaded();
-
     App::new()
         .insert_resource(ClearColor(Color::srgb(0.05, 0.05, 0.08)))
         .init_resource::<CityStats>()
@@ -42,60 +36,6 @@ fn main() {
             ),
         )
         .run();
-}
-
-fn ensure_sprites_downloaded() {
-    let path = Path::new(SPRITE_PATH);
-
-    // If sprite already exists, do nothing
-    if path.exists() {
-        println!("✓ Sprite pack already present at {}", SPRITE_PATH);
-        return;
-    }
-
-    // Ensure assets/ directory exists
-    if let Some(parent) = path.parent() {
-        if let Err(e) = fs::create_dir_all(parent) {
-            eprintln!("Failed to create assets directory: {e}");
-            return;
-        }
-    }
-
-    println!("Downloading Kenney Roguelike Modern City sprites (CC0)...");
-    println!("From: {}", SPRITE_ZIP_URL);
-
-    // Blocking HTTP GET
-    let response = match reqwest::blocking::get(SPRITE_ZIP_URL) {
-        Ok(resp) => resp,
-        Err(e) => {
-            eprintln!("Failed to download sprites: {e}");
-            eprintln!("You can manually download from: https://www.kenney.nl/assets/roguelike-modern-city");
-            return;
-        }
-    };
-
-    let bytes = match response.bytes() {
-        Ok(b) => b,
-        Err(e) => {
-            eprintln!("Failed to read sprite response: {e}");
-            return;
-        }
-    };
-
-    let mut file = match fs::File::create(path) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("Failed to create sprite file: {e}");
-            return;
-        }
-    };
-
-    if let Err(e) = file.write_all(&bytes) {
-        eprintln!("Failed to write sprite file: {e}");
-        return;
-    }
-
-    println!("✓ Sprites downloaded successfully to {}", SPRITE_PATH);
 }
 
 /// Resource holding sprite atlas info
