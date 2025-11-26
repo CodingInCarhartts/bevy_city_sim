@@ -17,7 +17,7 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Bevy City Sim".to_string(),
-                    resolution: (1280., 720.).into(),
+                    resolution: (1280, 720).into(),
                     ..default()
                 }),
                 ..default()
@@ -189,7 +189,7 @@ fn handle_mouse_input(
         return;
     };
 
-    let Some(world_pos) =
+    let Ok(world_pos) =
         camera.viewport_to_world_2d(cam_transform, cursor_pos)
     else {
         return;
