@@ -9,6 +9,7 @@ const TILE_SIZE: f32 = 32.0;
 // Kenney Roguelike Modern City pack (CC0)
 const SPRITE_ZIP_URL: &str = "https://kenney.nl/content/3-assets/11-roguelike-modern-city/roguelikeCity_magenta.png";
 const SPRITE_PATH: &str = "assets/roguelike_city.png";
+const SPRITE_ASSET_PATH: &str = "roguelike_city.png"; // Path for Bevy AssetServer (no 'assets/' prefix)
 
 fn main() {
     // Download sprites before starting Bevy
@@ -123,7 +124,7 @@ fn load_sprites(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ) {
-    let texture = asset_server.load(SPRITE_PATH);
+    let texture = asset_server.load(SPRITE_ASSET_PATH);
     
     // Kenney's roguelike city sheet is 17x17 tiles at 16x16 pixels each
     let layout = TextureAtlasLayout::from_grid(
@@ -175,11 +176,6 @@ impl Zone {
             Commercial => Industrial,
             Industrial => Empty,
         }
-    }
-
-    fn color(self) -> Color {
-        // Return white so sprites show their natural colors
-        Color::WHITE
     }
 }
 
