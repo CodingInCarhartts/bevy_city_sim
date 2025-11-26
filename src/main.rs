@@ -17,7 +17,7 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Bevy City Sim".to_string(),
-                    resolution: (1280.0, 720.0).into(),
+                    resolution: (1280., 720.).into(),
                     ..default()
                 }),
                 ..default()
@@ -99,7 +99,7 @@ struct SimTimer(Timer);
 struct StatsText;
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2d);
 }
 
 fn spawn_map(mut commands: Commands) {
@@ -117,19 +117,16 @@ fn spawn_map(mut commands: Commands) {
             let zone = Zone::Empty;
 
             commands.spawn((
-                SpriteBundle {
-                    sprite: Sprite {
-                        color: zone.color(),
-                        custom_size: Some(Vec2::splat(TILE_SIZE - 1.0)),
-                        ..default()
-                    },
-                    transform: Transform::from_xyz(
-                        world_x,
-                        world_y,
-                        0.0,
-                    ),
+                Sprite {
+                    color: zone.color(),
+                    custom_size: Some(Vec2::splat(TILE_SIZE - 1.0)),
                     ..default()
                 },
+                Transform::from_xyz(
+                    world_x,
+                    world_y,
+                    0.0,
+                ),
                 TileCoord {
                     coord: IVec2::new(x, y),
                 },
@@ -143,24 +140,18 @@ fn spawn_map(mut commands: Commands) {
     }
 }
 
-fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let font = asset_server.load("fonts/FiraSans-Bold.ttf");
+fn setup_ui(mut commands: Commands) {
     commands.spawn((
-        TextBundle {
-            text: Text::from_sections([TextSection::new(
-                "Pop: 0  Jobs: 0  Money: 0",
-                TextStyle {
-                    font,
-                    font_size: 24.0,
-                    color: Color::WHITE,
-                },
-            )]),
-            style: Style {
-                position_type: PositionType::Absolute,
-                top: Val::Px(10.0),
-                left: Val::Px(10.0),
-                ..default()
-            },
+        Text::new("Pop: 0  Jobs: 0  Money: 0"),
+        TextFont {
+            font_size: 24.0,
+            ..default()
+        },
+        TextColor(Color::WHITE),
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(10.0),
+            left: Val::Px(10.0),
             ..default()
         },
         StatsText,
@@ -182,7 +173,7 @@ fn handle_mouse_input(
         return;
     }
 
-    let window = if let Ok(w) = windows.get_single() {
+    let window = if let Ok(w) = windows.single() {
         w
     } else {
         return;
@@ -192,7 +183,7 @@ fn handle_mouse_input(
         return;
     };
 
-    let (camera, cam_transform) = if let Ok(v) = camera_q.get_single() {
+    let (camera, cam_transform) = if let Ok(v) = camera_q.single() {
         v
     } else {
         return;
@@ -309,8 +300,8 @@ fn update_stats_ui(
         return;
     }
 
-    if let Ok(mut text) = query.get_single_mut() {
-        text.sections[0].value = format!(
+    if let Ok(mut text) = query.single_mut() {
+        **text = format!(
             "Pop: {}  Jobs: {}  Money: {}",
             stats.population, stats.jobs, stats.money
         );
